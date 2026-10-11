@@ -3,8 +3,7 @@ import Navbar from './components/Navbar';
 import Login from './components/Login';
 import StudentDashboard from './components/StudentDashboard';
 import LecturerDashboard from './components/LecturerDashboard';
-import SupabaseConfigModal from './components/SupabaseConfigModal';
-import { supabase, getSupabaseConfig } from './lib/supabase';
+import { supabase } from './lib/supabase';
 import initialStudentsData from '../students.json';
 
 export default function App() {
@@ -13,7 +12,6 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(Boolean(supabase));
 
   // Save session
@@ -49,13 +47,6 @@ export default function App() {
         user={user}
         onLogout={handleLogout}
         isSupabaseConnected={isSupabaseConnected}
-        onOpenConfig={() => setIsConfigOpen(true)}
-      />
-
-      {/* Supabase Connection Modal */}
-      <SupabaseConfigModal
-        isOpen={isConfigOpen}
-        onClose={() => setIsConfigOpen(false)}
       />
 
       {/* Main Content Area */}

@@ -11,7 +11,9 @@ import {
   RefreshCw, 
   SlidersHorizontal,
   FileSpreadsheet,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Minus
 } from 'lucide-react';
 
 export default function LecturerDashboard({ initialStudents }) {
@@ -82,7 +84,7 @@ export default function LecturerDashboard({ initialStudents }) {
 
   // Save Mark to Supabase
   const saveMark = async (student) => {
-    const matricNo = student.matric_no;
+    const matricNo = String(student.matric_no).trim();
     const markValue = Number(student.marks) || 0;
 
     setSavingStatus((prev) => ({ ...prev, [matricNo]: 'saving' }));
@@ -91,8 +93,14 @@ export default function LecturerDashboard({ initialStudents }) {
       try {
         const { error } = await supabase
           .from('students')
-          .update({ marks: markValue, updated_at: new Date().toISOString() })
-          .eq('matric_no', matricNo);
+          .upsert(
+            {
+              matric_no: matricNo,
+              name: student.name,
+              marks: markValue,
+            },
+            { onConflict: 'matric_no' }
+          );
 
         if (error) throw error;
 
@@ -107,6 +115,12 @@ export default function LecturerDashboard({ initialStudents }) {
       } catch (err) {
         console.error('Error updating mark:', err);
         setSavingStatus((prev) => ({ ...prev, [matricNo]: 'error' }));
+        const errorMsg = err?.message || err?.details || 'Database error';
+        setNotification({
+          type: 'error',
+          message: `Update failed: ${errorMsg}`
+        });
+        alert(`Cannot save mark:\n${errorMsg}\n\nTip: Make sure you ran the SQL script in Supabase!`);
       }
     } else {
       // Local simulated save if Supabase not yet configured
@@ -231,6 +245,24 @@ export default function LecturerDashboard({ initialStudents }) {
 
       </div>
 
+      {notification && (
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs sm:text-sm">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
+            <div>
+              <p className="font-semibold text-rose-200">Database Action Notice</p>
+              <p className="text-rose-300/90 text-xs mt-0.5">{notification.message}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setNotification(null)}
+            className="text-xs text-rose-400 hover:text-white px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 transition"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Control Bar: Search, Filters, Refresh, Export */}
       <div className="bg-slate-900/90 border border-slate-800 p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row gap-4 items-center justify-between backdrop-blur-xl">
         
@@ -271,8 +303,120 @@ export default function LecturerDashboard({ initialStudents }) {
 
       </div>
 
-      {/* Students Table */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden backdrop-blur-xl">
+      {/* Mobile Touch-Friendly Card View (Phones & Small Screens) */}
+      <div className="block md:hidden space-y-3">
+        {filteredStudents.length === 0 ? (
+          <div className="py-12 text-center text-slate-500 bg-slate-900/60 rounded-2xl border border-slate-800">
+            No students match "{searchTerm}"
+          </div>
+        ) : (
+          filteredStudents.map((s, idx) => {
+            const status = savingStatus[s.matric_no];
+            return (
+              <div
+                key={s.matric_no}
+                className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl space-y-3 shadow-lg"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-800 text-slate-400">
+                        #{idx + 1}
+                      </span>
+                      <span className="font-mono text-xs font-bold text-emerald-400">
+                        {s.matric_no}
+                      </span>
+                    </div>
+                    <p className="font-bold text-white text-sm uppercase mt-1">
+                      {s.name}
+                    </p>
+                  </div>
+
+                  {/* Status indicator */}
+                  <div className="shrink-0">
+                    {status === 'saving' && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-amber-400 font-medium px-2 py-1 rounded-lg bg-amber-500/10">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                        Syncing
+                      </span>
+                    )}
+                    {status === 'saved' && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium px-2 py-1 rounded-lg bg-emerald-500/10">
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        Live
+                      </span>
+                    )}
+                    {status === 'error' && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-rose-400 font-medium px-2 py-1 rounded-lg bg-rose-500/10">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        Failed
+                      </span>
+                    )}
+                    {!status && (
+                      <span className="text-[11px] text-slate-500 px-2 py-1 rounded-lg bg-slate-800/60 font-mono">
+                        Ready
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Touch-Friendly Marks Editor */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Marks:
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = Number(s.marks) || 0;
+                        const updated = Math.max(0, current - 1);
+                        handleMarkChange(s.matric_no, updated);
+                      }}
+                      className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold flex items-center justify-center transition border border-slate-700"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={s.marks}
+                      onChange={(e) => handleMarkChange(s.matric_no, e.target.value)}
+                      className="w-16 h-9 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono font-bold text-center text-base focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = Number(s.marks) || 0;
+                        const updated = Math.min(100, current + 1);
+                        handleMarkChange(s.matric_no, updated);
+                      }}
+                      className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold flex items-center justify-center transition border border-slate-700"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => saveMark(s)}
+                      className="ml-1 px-3.5 h-9 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-semibold rounded-xl flex items-center gap-1 text-xs shadow-md shadow-indigo-600/30 transition"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Save</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Students Table (Hidden on Mobile) */}
+      <div className="hidden md:block bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden backdrop-blur-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

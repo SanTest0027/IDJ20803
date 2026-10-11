@@ -25,29 +25,14 @@ export default function Navbar({ user, onLogout, isSupabaseConnected, onOpenConf
         {/* Right side controls */}
         <div className="flex items-center gap-3 sm:gap-4">
           
-          {/* Supabase status badge */}
-          <button
-            onClick={onOpenConfig}
-            title="Configure Supabase Connection"
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition ${
-              isSupabaseConnected
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
-            }`}
-          >
+          {/* Real-time status indicator (no key or config exposed) */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
             <span className="relative flex h-2 w-2">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                isSupabaseConnected ? 'bg-emerald-400' : 'bg-amber-400'
-              }`}></span>
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${
-                isSupabaseConnected ? 'bg-emerald-500' : 'bg-amber-500'
-              }`}></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-emerald-400"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span className="hidden sm:inline">
-              {isSupabaseConnected ? 'Live Sync Active' : 'Configure Supabase'}
-            </span>
-            <Settings2 className="w-3.5 h-3.5 ml-0.5 opacity-70" />
-          </button>
+            <span className="hidden sm:inline">Live Sync</span>
+          </div>
 
           {/* User profile / session */}
           {user && (
