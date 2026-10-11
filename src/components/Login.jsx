@@ -141,21 +141,6 @@ export default function Login({ onLoginStudent, onLoginLecturer }) {
               <span>View My Marks</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-
-            {/* Quick autofill sample helper */}
-            <div className="pt-2 text-center">
-              <span className="text-[11px] text-slate-500">
-                Test Matric: {' '}
-                <button
-                  type="button"
-                  onClick={() => { setMatricNo('252021399'); setStudentPassword('1234'); }}
-                  className="text-emerald-400 hover:underline font-mono"
-                >
-                  252021399
-                </button>
-                {' '}(Password: 1234)
-              </span>
-            </div>
           </form>
         )}
 
@@ -214,20 +199,6 @@ export default function Login({ onLoginStudent, onLoginLecturer }) {
               <span>Access Lecturer Dashboard</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-
-            {/* Quick autofill helper */}
-            <div className="pt-2 text-center">
-              <span className="text-[11px] text-slate-500">
-                Preset credentials:{' '}
-                <button
-                  type="button"
-                  onClick={() => { setLecturerUsername('Lect1'); setLecturerPassword('123izad'); }}
-                  className="text-indigo-400 hover:underline font-medium"
-                >
-                  Lect1 / 123izad
-                </button>
-              </span>
-            </div>
           </form>
         )}
 
